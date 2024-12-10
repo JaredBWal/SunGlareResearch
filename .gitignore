@@ -1,3 +1,8 @@
 
 #checkpoints
 .ipynb_checkpoints
+.env
+
+
+data/image_processing
+data/tile_imgs

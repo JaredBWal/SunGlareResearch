@@ -1,0 +1,5 @@
+python-dotenv
+requests
+transformers==4.46.3
+torch
+matplotlib
