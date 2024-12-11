@@ -7,3 +7,7 @@
 data/image_processing
 data/tile_imgs
 data/dc_nodes
+
+data/dc_segments_map.html
+data/dc_segments.csv
+data/test_washington_dc_nodes_map.html
