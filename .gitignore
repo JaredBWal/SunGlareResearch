@@ -15,3 +15,4 @@ data/panoramic_imgs
 data/panoramic_segmentation_maps
 data/fredericksburg
 data/
+cache/
