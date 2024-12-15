@@ -472,6 +472,7 @@ def grab_store_all_segments(graph, base_directory):
     segments = {} #key = lat_long, value = lat, long, headings[], segment_links[]
 
     add_all_nodes_to_segments(graph, nodes, segments)
+    print("\tNodes added, now adding edges between nodes to segments")
     add_edges_between_nodes_to_segments(graph, nodes, segments)
 
     # TODO create metadata file storing this position

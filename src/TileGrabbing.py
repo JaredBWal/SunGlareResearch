@@ -4,16 +4,15 @@
 # Goes through each node and attempts to grab its tiles from Google Street Maps API (grabs two tiles that will later become the panoramic)
 # 
 
-from dotenv import load_dotenv
 import requests
 import os
 import time
 import numpy as np
 from PIL import Image
-import csv
 import pandas as pd
+from dotenv import load_dotenv
 
-API_KEY = os.getenv("API_KEY")
+API_KEY = ""
 SESSION_ID = ""
 
 ERROR_COUNT = 0
@@ -23,8 +22,14 @@ API_CALLS = 0
 
 def setup_session():
     global SESSION_ID
-    session_url = f"https://tile.googleapis.com/v1/createSession?key={API_KEY}"
+    global API_KEY
 
+    load_dotenv(override=True)
+    API_KEY = os.getenv("API_KEY")
+
+    print(API_KEY)
+
+    session_url = f"https://tile.googleapis.com/v1/createSession?key={API_KEY}"
     payload = {
         "mapType": "streetview",
         "language": "en-US",
@@ -36,14 +41,12 @@ def setup_session():
 
     response = requests.post(session_url, json=payload, headers=headers)
 
-    # Print the response
     if response.status_code == 200:
-        # print("Session Token Created:", response.json())
         SESSION_ID = response.json()['session']
     else:
-        print("Error:", response.status_code, response.text)
+        print("\tError Setting Up API:", response.status_code, response.text)
 
-setup_session()
+
 
 
 def check_if_calls_should_sleep():
@@ -54,15 +57,13 @@ def check_if_calls_should_sleep():
     API_CALLS+=1
     TOTAL_API_CALLS+=1
 
-    print(f"TOTAL API CALLS: {TOTAL_API_CALLS}")
-    # just for debugging
-    print(f"DUPLICATE API CALLS: {DUPLICATE_IMAGE_CALLS}")
+    if TOTAL_API_CALLS % 100 == 0:
+        print(f"\tTOTAL API CALLS: {TOTAL_API_CALLS}")
 
-    if API_CALLS >= 5000:
-        print("Sleeping Calls for 1 minute")
+    if API_CALLS >= 4000:
+        print("\tTaking a Break...Sleeping Calls for 30 seconds")
         time.sleep(30)
         #reset call counter
-        
         API_CALLS = 0
 
 
@@ -72,11 +73,10 @@ def get_image_for_panoId(pano_id, output_path, tile_x=0, tile_y=0, z=1):
     url = f"https://tile.googleapis.com/v1/streetview/tiles/{z}/{tile_x}/{tile_y}?session={SESSION_ID}&key={API_KEY}&panoId={pano_id}&zoom=1"
 
     response = requests.get(url)
-    # Print the response
     if response.status_code == 200:
        return response.content
     else:
-        print("Error:", response.status_code, response.text)
+        print("\tError:", response.status_code, response.text)
 
 
 def get_data_from_cords(lat, long, radius=25):
@@ -87,7 +87,7 @@ def get_data_from_cords(lat, long, radius=25):
     if response.status_code == 200:
         return response.json()
     else:
-        print("Error:", response.status_code, response.text)
+        print("\tError:", response.status_code, response.text)
 
 
 def get_data_from_panoId(pano_id):
@@ -99,7 +99,7 @@ def get_data_from_panoId(pano_id):
     if response.status_code == 200:
         return response.json()
     else:
-        print("Error:", response.status_code, response.text)
+        print("\tError:", response.status_code, response.text)
 
 
 
@@ -129,7 +129,7 @@ def remove_black_rows(image):
     cropped_image = Image.fromarray(cropped_image_array)
     return cropped_image
 
-def crop_both_tile_images(tile_path_0, tile_path_1, coord_data):
+def crop_both_tile_images(tile_path_0, tile_path_1):
 
     # remove black rows from first image, and save
     with Image.open(tile_path_0) as img:
@@ -175,11 +175,6 @@ def combine_panoramic_tiles(tile1_path, tile2_path, output_path):
 
     # Save the combined image
     combined_image.save(output_path)
-    print(f"Combined panorama saved to {output_path}")
-
-
-
-
 
 def write_as_csv(filepath, dict):
     df = pd.DataFrame.from_dict(dict, orient='index')
@@ -188,11 +183,11 @@ def write_as_csv(filepath, dict):
 
 
 # returns true if was successful else false
-def save_panoramic_image_from_pano_id(pano_id, base_path_to_save_img, saved_panoramic_imgs):
+def save_panoramic_image_from_pano_id(pano_id, base_directory, saved_panoramic_imgs):
     global DUPLICATE_IMAGE_CALLS
-    pano_save_path = f"{base_path_to_save_img}/panoramic_imgs/{pano_id}.jpg"
-    image_0_save_path = f"{base_path_to_save_img}/tile_imgs/{pano_id}_0.jpg"
-    image_1_save_path = f"{base_path_to_save_img}/tile_imgs/{pano_id}_1.jpg"
+    pano_save_path = f"{base_directory}/panoramic_imgs/{pano_id}.jpg"
+    image_0_save_path = f"{base_directory}/tile_imgs/{pano_id}_0.jpg"
+    image_1_save_path = f"{base_directory}/tile_imgs/{pano_id}_1.jpg"
 
     try:
         if pano_id not in saved_panoramic_imgs:
@@ -202,10 +197,11 @@ def save_panoramic_image_from_pano_id(pano_id, base_path_to_save_img, saved_pano
             saved_panoramic_imgs.append(pano_id)
         else:
             # if already saved, just return true
+            print(f"\tDuplicate Image Call for {pano_id} - not making calls")
             DUPLICATE_IMAGE_CALLS += 1
             return True
     except:
-        print(f"Error getting images for segment_id: {pano_id}")
+        print(f"\tError getting images for segment_id: {pano_id}")
         return False
 
     # Save both of these images
@@ -215,6 +211,10 @@ def save_panoramic_image_from_pano_id(pano_id, base_path_to_save_img, saved_pano
     with open(image_1_save_path, "wb") as file:
         file.write(image_1_content)
 
+    # crop the images (since some have black rows at the bottom)
+    crop_both_tile_images(image_0_save_path, image_1_save_path)
+
+
     # combine them into a panoramic
     combine_panoramic_tiles(image_0_save_path, image_1_save_path, pano_save_path)
     # save the panoramic
@@ -222,14 +222,18 @@ def save_panoramic_image_from_pano_id(pano_id, base_path_to_save_img, saved_pano
     return True
 
 
-def get_store_all_panoramics_from_segments(segments_csv_path, base_path_to_save_img, panoramic_save_path):
+def get_store_all_panoramics_from_segments(base_directory):
     # convert csv into dictionary
+    segments_csv_path = f"{base_directory}/segments.csv"
     segments = pd.read_csv(segments_csv_path)
 
-    # make sure all needed directories exist
-    panoramic_directory_path = f"{base_path_to_save_img}/panoramic_imgs"
-    tile_directory_path = f"{base_path_to_save_img}/tile_imgs"
+    # TODO DEBUG
+    # segments = segments.head(50)
 
+    panoramic_directory_path = f"{base_directory}/panoramic_imgs"
+    tile_directory_path = f"{base_directory}/tile_imgs"
+
+    # make sure all needed directories exist
     os.makedirs(panoramic_directory_path, exist_ok=True)
     os.makedirs(tile_directory_path, exist_ok=True)
 
@@ -240,18 +244,11 @@ def get_store_all_panoramics_from_segments(segments_csv_path, base_path_to_save_
 
     # pano_id : segment_id, lat, long, heading, tilt, month, year
     panoramic_data = {} 
-
-    # print(segments)
-
-    # just for debugging
-    # segments = segments.head(100)
          
     error_count = 0
     # loop through all segments
     for index, segment in segments.iterrows():
         
-        print(f"==={index}===")
-        print(segment)
         segment_id = segment['segment_id']
         
         segment_lat = segment['lat']
@@ -264,7 +261,6 @@ def get_store_all_panoramics_from_segments(segments_csv_path, base_path_to_save_
         try:
             # TODO change radius to 20
             coord_data = get_data_from_cords(segment_lat, segment_long, radius=10)
-            print(coord_data)
             pano_id = coord_data['panoId']
             pano_heading = convert_heading_to_anticlockwise_from_east(coord_data['heading'])
             pano_tilt = coord_data['tilt'] - 90 # tilt is 0 when looking straight up, 90 when looking straight ahead
@@ -272,9 +268,8 @@ def get_store_all_panoramics_from_segments(segments_csv_path, base_path_to_save_
             pano_year, pano_month = date.split("-")
             
            
-            print(f"pano_id: {pano_id}, heading: {pano_heading}, tilt: {pano_tilt}, year: {pano_year}, month: {pano_month}")
 
-            if (save_panoramic_image_from_pano_id(pano_id, base_path_to_save_img, saved_panoramic_imgs)):
+            if (save_panoramic_image_from_pano_id(pano_id, base_directory, saved_panoramic_imgs)):
                 # succesful at getting and saving images (including panoramic)
                 # now just store the data about the coords
                 panoramic_data[pano_id] = {
@@ -297,28 +292,28 @@ def get_store_all_panoramics_from_segments(segments_csv_path, base_path_to_save_
 
 
         except:
-            print(f"Error getting data for segment_id: {segment_id}l, skipping")
+            print(f"\tError getting data for segment_id: {segment_id}, skipping")
             error_count += 1
             continue
         
     # save the data about the panoramics
+    panoramic_data_path = f"{base_directory}/panoramic_data.csv"
+    write_as_csv(panoramic_data_path, panoramic_data)
+
+
+
+def grab_tiles_given_directory(base_directory):
+    # segment_to_get_from_path = f"{data_name_directory}/segments.csv"
+    # base_path_to_save_img = f"{data_name_directory}/panoramic_imgs"
+    # csv_save_path = f"{data_name_directory}/panoramic_data.csv"
+    # get_store_all_panoramics_from_segments(segment_to_get_from_path,base_path_to_save_img,csv_save_path)
+    setup_session()
+    get_store_all_panoramics_from_segments(base_directory)
     
-    write_as_csv(panoramic_save_path, panoramic_data)
-
-    print(f"Error Count: {error_count}")
-    print(saved_panoramic_imgs)
-
-
-def grab_tiles_for_place(name):
-    data_name_directory = f"../data/{name}"
-    segment_to_get_from_path = f"{data_name_directory}/segments.csv"
-    base_path_to_save_img = f"{data_name_directory}/panoramic_imgs"
-    csv_save_path = f"{data_name_directory}/panoramic_data.csv"
-    get_store_all_panoramics_from_segments(segment_to_get_from_path,base_path_to_save_img,csv_save_path)
-    
-    print(f"Duplicate Image Calls: {DUPLICATE_IMAGE_CALLS}")
-    print(f"Total API Calls: {TOTAL_API_CALLS}")
-    print(f"Error Count: {ERROR_COUNT}")
+    print("\tAll Panoramic Images Grabbed")
+    print(f"\tTotal API Calls: {TOTAL_API_CALLS}")
+    print(f"\tDuplicate Image Calls: {DUPLICATE_IMAGE_CALLS}")
+    print(f"\tTotal Image Grabbing Errors: {ERROR_COUNT}")
 
 
 
