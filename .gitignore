@@ -16,3 +16,4 @@ data/panoramic_segmentation_maps
 data/fredericksburg
 data/
 cache/
+src/__pycache__
