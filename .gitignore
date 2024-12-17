@@ -17,3 +17,6 @@ data/fredericksburg
 data/
 cache/
 src/__pycache__
+
+car_crashes_clustered_map.html
+sun_glare_traffic_map.html

@@ -36,7 +36,7 @@ def main():
         grab_tiles_given_directory(base_directory)
 
         print("Now, Create 2 segmentation maps for each image, one with trees, and one without trees")
-        # create_both_segmentation_maps(base_directory)
+        create_both_segmentation_maps(base_directory)
     except KeyboardInterrupt:
         print("Keyboard interrupt detected. Exiting...")
         exit()
@@ -44,9 +44,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
     # print("Running sun glare detection tool")
 
-    # date_time_example = datetime(2024, 6, 12, 23, 0, 0, tzinfo=timezone.utc)
-    # calculate_sun_glare_for_directory_name_at_time("washington_dc", date_time_example)
+    # TODO Here you add 
+    date_time_example = datetime(2024, 6, 12, 23, 0, 0, tzinfo=timezone.utc)
+    calculate_sun_glare_for_directory_name_at_time("washington_dc", date_time_example)
     

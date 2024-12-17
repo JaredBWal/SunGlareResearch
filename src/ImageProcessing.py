@@ -42,7 +42,7 @@ def store_remove_trees_panoramic(panoramic_segmentation_path,output_path):
     # Inpaint the tree mask using the combined mask (where 0 in tree_mask will be filled)
     inpainted_tree_mask = cv2.inpaint(tree_mask, combined_mask, 3, cv2.INPAINT_TELEA)
 
-    # Normalize the result to 0-1 if needed
+    # normalize result
     inpainted_tree_mask = inpainted_tree_mask / 255.0
 
     # Replace the tree class (8) in the original segmentation map with the inpainted result
@@ -104,11 +104,26 @@ def create_both_segmentation_maps(base_directory):
     segmentation_map_output_directory = f"{base_directory}/segmentation_maps"
     segmentation_map_without_trees_output_directory = f"{base_directory}/segmentation_maps_without_trees"
     
+
+    image_files = os.listdir(panoramic_imgs_directory)
+    # Sort the files using natural sorting
+    sorted_images = sorted(image_files)
+
     # make sure directories exists
     os.makedirs(segmentation_map_output_directory, exist_ok=True)
     os.makedirs(segmentation_map_without_trees_output_directory, exist_ok=True)
 
-    for filename in os.listdir(panoramic_imgs_directory):
+    completed_segmentation_maps = os.listdir(segmentation_map_output_directory)
+    completed_segmentation_maps_without_trees = os.listdir(segmentation_map_without_trees_output_directory)
+
+
+    count = 0
+    for filename in sorted_images:
+        # print(f"\tCreating segmentation map for ({count}) {filename}")
+        count+=1
+        if filename.split(".")[0]+".png" in completed_segmentation_maps and filename.split(".")[0]+".png" in completed_segmentation_maps_without_trees:
+            print(f"\t\tSegmentation map already exists for {filename}... skipping")
+            continue
         name = filename.split(".")[0]
         segmentation_save_file = f"{segmentation_map_output_directory}/{name}.png"
         segmentation_without_trees_save_file = f"{segmentation_map_without_trees_output_directory}/{name}.png"

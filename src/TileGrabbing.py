@@ -202,6 +202,7 @@ def save_panoramic_image_from_pano_id(pano_id, base_directory, saved_panoramic_i
             return True
     except:
         print(f"\tError getting images for segment_id: {pano_id}")
+        ERROR_COUNT += 1
         return False
 
     # Save both of these images
@@ -223,6 +224,9 @@ def save_panoramic_image_from_pano_id(pano_id, base_directory, saved_panoramic_i
 
 
 def get_store_all_panoramics_from_segments(base_directory):
+    global ERROR_COUNT
+    panoramic_data_path = f"{base_directory}/panoramic_data.csv"
+
     # convert csv into dictionary
     segments_csv_path = f"{base_directory}/segments.csv"
     segments = pd.read_csv(segments_csv_path)
@@ -243,12 +247,27 @@ def get_store_all_panoramics_from_segments(base_directory):
     saved_panoramic_imgs = [img.split(".")[0] for img in saved_panoramic_imgs] # list of pano_ids
 
     # pano_id : segment_id, lat, long, heading, tilt, month, year
-    panoramic_data = {} 
+    panoramic_data = pd.read_csv(panoramic_data_path)
+    segment_ids_in_panoramic_data = panoramic_data['segment_id'].values
+    panoramic_data = panoramic_data.set_index('pano_id').T.to_dict()
          
     error_count = 0
+
+    
+
     # loop through all segments
     for index, segment in segments.iterrows():
         
+        if (segment['segment_id'] in segment_ids_in_panoramic_data):
+            # we already have the data for this segment, skip
+            print(f"\tAlready have data for segment_id: {segment['segment_id']}, skipping")
+            continue
+
+        # NOTE allows for partial saving if quotas are reached
+        # if index % 1000 == 0:
+        #     # evert 1000 segments, save the data as a safety measure
+        #     write_as_csv(panoramic_data_path, panoramic_data)
+
         segment_id = segment['segment_id']
         
         segment_lat = segment['lat']
@@ -257,6 +276,8 @@ def get_store_all_panoramics_from_segments(base_directory):
         segment_links = segment['segment_links']
         segment_heading_links = segment['heading_links']
         segment_line_strings = segment['line_strings']
+
+
 
         try:
             # TODO change radius to 20
@@ -293,12 +314,12 @@ def get_store_all_panoramics_from_segments(base_directory):
 
         except:
             print(f"\tError getting data for segment_id: {segment_id}, skipping")
-            error_count += 1
+            ERROR_COUNT += 1
             continue
         
     # save the data about the panoramics
-    panoramic_data_path = f"{base_directory}/panoramic_data.csv"
     write_as_csv(panoramic_data_path, panoramic_data)
+    
 
 
 

@@ -170,18 +170,18 @@ def visualize_just_data(base_directory, date_string, center_point):
     
             draw_linestring_on_map(pano_heading_id,segment_line_string, m, circle_color, heading)
             # draw circles
-            folium.CircleMarker(
-                location=[lat, long],
-                radius=2,
-                color=circle_color,
-                fill=True,
-                fill_color=circle_color,
-                fill_opacity=0.7,
-                popup=  f"Pano_id: {pano_id}\n"+
-                        f"Segment_id: {segment_id}\n"+
-                        f"Segment_headings: {segment_headings}\n"+
-                        f"line_string: {segment_line_string}",
-            ).add_to(m)
+            # folium.CircleMarker(
+            #     location=[lat, long],
+            #     radius=2,
+            #     color=circle_color,
+            #     fill=True,
+            #     fill_color=circle_color,
+            #     fill_opacity=0.7,
+            #     popup=  f"Pano_id: {pano_id}\n"+
+            #             f"Segment_id: {segment_id}\n"+
+            #             f"Segment_headings: {segment_headings}\n"+
+            #             f"line_string: {segment_line_string}",
+            # ).add_to(m)
 
     saved_html_map_path = f"{base_directory}/sun_glare_map_{date_string}.html"
     m.save(saved_html_map_path)
