@@ -15,3 +15,8 @@ data/panoramic_imgs
 data/panoramic_segmentation_maps
 data/fredericksburg
 data/
+cache/
+src/__pycache__
+
+car_crashes_clustered_map.html
+sun_glare_traffic_map.html
