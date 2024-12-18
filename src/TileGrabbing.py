@@ -25,9 +25,7 @@ def setup_session():
     global API_KEY
 
     load_dotenv(override=True)
-    API_KEY = os.getenv("API_KEY")
-
-    print(API_KEY)
+ 
 
     session_url = f"https://tile.googleapis.com/v1/createSession?key={API_KEY}"
     payload = {
@@ -50,6 +48,7 @@ def setup_session():
 
 
 def check_if_calls_should_sleep():
+    
     global API_CALLS
     global TOTAL_API_CALLS
     global DUPLICATE_IMAGE_CALLS
@@ -80,6 +79,7 @@ def get_image_for_panoId(pano_id, output_path, tile_x=0, tile_y=0, z=1):
 
 
 def get_data_from_cords(lat, long, radius=25):
+    print(API_KEY)
     check_if_calls_should_sleep()
     url = f"https://tile.googleapis.com/v1/streetview/metadata?session={SESSION_ID}&key={API_KEY}&lat={lat}&lng={long}&radius={radius}&"
     response = requests.get(url)
@@ -246,14 +246,16 @@ def get_store_all_panoramics_from_segments(base_directory):
     saved_panoramic_imgs = os.listdir(panoramic_directory_path)
     saved_panoramic_imgs = [img.split(".")[0] for img in saved_panoramic_imgs] # list of pano_ids
 
-    # pano_id : segment_id, lat, long, heading, tilt, month, year
-    panoramic_data = pd.read_csv(panoramic_data_path)
-    segment_ids_in_panoramic_data = panoramic_data['segment_id'].values
-    panoramic_data = panoramic_data.set_index('pano_id').T.to_dict()
-         
-    error_count = 0
+    panoramic_data = {}
+    segment_ids_in_panoramic_data = []
 
+    # pano_id : segment_id, lat, long, heading, tilt, month, year
+    if os.path.exists(panoramic_data_path):
+        panoramic_data = pd.read_csv(panoramic_data_path)
+        segment_ids_in_panoramic_data = panoramic_data['segment_id'].values
+        panoramic_data = panoramic_data.set_index('pano_id').T.to_dict()
     
+    error_count = 0
 
     # loop through all segments
     for index, segment in segments.iterrows():
@@ -323,11 +325,10 @@ def get_store_all_panoramics_from_segments(base_directory):
 
 
 
-def grab_tiles_given_directory(base_directory):
-    # segment_to_get_from_path = f"{data_name_directory}/segments.csv"
-    # base_path_to_save_img = f"{data_name_directory}/panoramic_imgs"
-    # csv_save_path = f"{data_name_directory}/panoramic_data.csv"
-    # get_store_all_panoramics_from_segments(segment_to_get_from_path,base_path_to_save_img,csv_save_path)
+def grab_tiles_given_directory(base_directory, api_key):
+    global API_KEY
+    API_KEY = api_key
+    print(f"API_KEY = {API_KEY}")
     setup_session()
     get_store_all_panoramics_from_segments(base_directory)
     
