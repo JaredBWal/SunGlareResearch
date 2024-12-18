@@ -26,16 +26,15 @@ def apply_offset_to_coordinates(coord, heading, offset_buckets):
     elif 292.5 <= heading < 337.5:
         x_offset, y_offset = offset_buckets["northwest"]
     else:
-        x_offset, y_offset = 0, 0  # Default offset for invalid heading
+        x_offset, y_offset = 0, 0  
 
-    # Apply the offsets
+    # apply offsets
     modified_lat = lat + y_offset
     modified_lon = lon + x_offset
 
     return modified_lat, modified_lon
 
 def draw_linestring_on_map(sun_glare_id,line_string, map_object, color, heading):
-    # Buckets for different heading ranges
     one = 0.00001
     half = 0.00001
     modifier = 2
@@ -52,14 +51,13 @@ def draw_linestring_on_map(sun_glare_id,line_string, map_object, color, heading)
     }
 
     if line_string:
-        # Convert the LineString to a list of coordinates (lat, lon)
         coordinates = [(coord[1], coord[0]) for coord in line_string.coords]
         
         if heading is not None and offset_buckets:
-            # Apply offset to each coordinate based on the heading
+            # apply the offset to each coordinate based on the heading
             coordinates = [apply_offset_to_coordinates(coord, heading, offset_buckets) for coord in coordinates]
         
-        # Create a PolyLine with the given coordinates and color
+        # create a PolyLine with the given coordinates and color
         folium.PolyLine(
             locations=coordinates,
             color=color,

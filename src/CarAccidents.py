@@ -17,21 +17,18 @@ from shapely.geometry import MultiPoint
 
 
 def convert_military_integer_to_time(military_int):
-    # Ensure the military integer is a string with leading zeros if necessary
     military_time = str(military_int).zfill(4)
 
-    # Extract hours and minutes
     hours = int(military_time[:len(military_time)-2]) if len(military_time) > 2 else 0
     minutes = int(military_time[len(military_time)-2:])
 
-    # Return formatted time
     return hours,minutes
 
 def calculate_sun_glare_for_crashes(location, base_directory):
     simple_name = location.split(",")[0]
     output_crash_path = f"{base_directory}/car_crashes_with_sun_glare.csv"
 
-    # Load the crash data
+    # load the crash data
     crash_data = pd.read_csv(f"{base_directory}/car_crashes_with_panoramics_{simple_name}.csv")
     panoramic_data = pd.read_csv(f"{base_directory}/panoramic_data.csv")
     panoramic_data['segment_headings'] = panoramic_data['segment_headings'].apply(ast.literal_eval)
@@ -68,14 +65,13 @@ def calculate_sun_glare_for_crashes(location, base_directory):
 
     sun_glare_data = car_crashes_with_sun_glare_df[car_crashes_with_sun_glare_df['has_sun_glare'] == True]
 
-    # Initialize the map with a default location (mean of latitudes and longitudes)
     m = folium.Map(location=[sun_glare_data['lat'].mean(), sun_glare_data['long'].mean()], zoom_start=12)
 
-    # Add circles for locations with sun glare
+    # add circles for locations with sun glare
     for _, row in sun_glare_data.iterrows():
         folium.Circle(
             location=[row['lat'], row['long']],
-            radius=6,  # Radius in meters
+            radius=6,  # in meters
             color='red',
             fill=True,
             fill_opacity=0.6,
